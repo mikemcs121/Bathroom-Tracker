@@ -113,7 +113,7 @@ function renderBlockTabs() {
       const start = settings[`block${i}_start`] || '';
       const end   = settings[`block${i}_end`]   || '';
       const teacher = settings[`block${i}_teacher`] || '';
-      const teacherLabel = teacher === '__none__' ? 'No Teacher' : teacher;
+      const teacherLabel = teacher === '__none__' ? 'Planning Period' : teacher;
       const label = start && end
         ? `${esc(name)} (${formatTimeDisplay(start)}–${formatTimeDisplay(end)}${teacherLabel ? ' · ' + esc(teacherLabel) : ''})`
         : esc(name);
@@ -462,7 +462,7 @@ function renderSettings() {
     }
     const options = [
       `<option value=""${teacherVal === '' ? ' selected' : ''}>All Teachers</option>`,
-      `<option value="__none__"${teacherVal === '__none__' ? ' selected' : ''}>No Teacher</option>`,
+      `<option value="__none__"${teacherVal === '__none__' ? ' selected' : ''}>Planning Period</option>`,
       ...teachers.map(t => `<option value="${esc(t)}"${t === teacherVal ? ' selected' : ''}>${esc(t)}</option>`),
     ].join('');
     html += `
