@@ -419,6 +419,9 @@ ipcMain.handle('get-student-totals', (_e, { dateFrom, dateTo, blockRanges, nearL
     const blockSQL = blockRanges.map((r, i) => {
       params[`:bs${i}`] = r.start;
       params[`:be${i}`] = r.end;
+      if (r.teacher === '__none__') {
+        return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND (out_location IS NULL OR TRIM(out_location) = ''))`;
+      }
       if (r.teacher) {
         params[`:bt${i}`] = r.teacher.toLowerCase().trim();
         return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND LOWER(TRIM(out_location)) = :bt${i})`;
@@ -472,6 +475,9 @@ ipcMain.handle('get-pass-detail', (_e, { dateFrom, dateTo, blockRanges, search, 
     const blockSQL = blockRanges.map((r, i) => {
       params[`:bs${i}`] = r.start;
       params[`:be${i}`] = r.end;
+      if (r.teacher === '__none__') {
+        return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND (out_location IS NULL OR TRIM(out_location) = ''))`;
+      }
       if (r.teacher) {
         params[`:bt${i}`] = r.teacher.toLowerCase().trim();
         return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND LOWER(TRIM(out_location)) = :bt${i})`;

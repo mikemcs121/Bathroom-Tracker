@@ -113,8 +113,9 @@ function renderBlockTabs() {
       const start = settings[`block${i}_start`] || '';
       const end   = settings[`block${i}_end`]   || '';
       const teacher = settings[`block${i}_teacher`] || '';
+      const teacherLabel = teacher === '__none__' ? 'No Teacher' : teacher;
       const label = start && end
-        ? `${esc(name)} (${formatTimeDisplay(start)}–${formatTimeDisplay(end)}${teacher ? ' · ' + esc(teacher) : ''})`
+        ? `${esc(name)} (${formatTimeDisplay(start)}–${formatTimeDisplay(end)}${teacherLabel ? ' · ' + esc(teacherLabel) : ''})`
         : esc(name);
       html += `<button class="block-tab${i === setActive ? ' active' : ''}" data-block="${i}"><span data-block-label="${i}">${label}</span></button>`;
     }
@@ -128,12 +129,6 @@ async function loadTotals() {
   const activeBlock = getActiveBlock('totals-block-tabs');
   const statsEl = document.getElementById('totals-stats');
   const tableEl = document.getElementById('totals-table');
-
-  if (!settings[`block${activeBlock}_teacher`]) {
-    statsEl.innerHTML = '<span class="stat">No data</span>';
-    tableEl.innerHTML = '<p class="empty">No teacher assigned to this block. Select a teacher in Settings.</p>';
-    return;
-  }
 
   const blockRanges = getBlockRange(activeBlock);
   const rows = await window.api.getStudentTotals({
@@ -461,13 +456,15 @@ function renderSettings() {
   `;
   for (let i = 1; i <= count; i++) {
     let teacherVal = settings[`block${i}_teacher`] || '';
-    if (teacherVal && !teachers.includes(teacherVal)) {
+    if (teacherVal && teacherVal !== '__none__' && !teachers.includes(teacherVal)) {
       teacherVal = '';
       settings[`block${i}_teacher`] = '';
     }
-    const options = ['', ...teachers]
-      .map(t => `<option value="${esc(t)}"${t === teacherVal ? ' selected' : ''}>${esc(t) || 'No Teacher'}</option>`)
-      .join('');
+    const options = [
+      `<option value=""${teacherVal === '' ? ' selected' : ''}>All Teachers</option>`,
+      `<option value="__none__"${teacherVal === '__none__' ? ' selected' : ''}>No Teacher</option>`,
+      ...teachers.map(t => `<option value="${esc(t)}"${t === teacherVal ? ' selected' : ''}>${esc(t)}</option>`),
+    ].join('');
     html += `
       <div class="block-row" data-block-row="${i}">
         <span class="block-num">Block ${i}</span>
