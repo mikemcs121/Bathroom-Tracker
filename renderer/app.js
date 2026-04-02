@@ -99,10 +99,7 @@ document.getElementById('detail-block-tabs').addEventListener('click', e => {
 
 function renderBlockTabs() {
   const count = Number(settings.block_count) || 5;
-  const defaultBlock = Math.min(
-    count,
-    Number((settings.default_blocks || '1').split(',')[0].trim()) || 1
-  );
+  const defaultBlock = 1;
 
   ['totals-block-tabs', 'detail-block-tabs'].forEach(containerId => {
     const container = document.getElementById(containerId);
@@ -463,7 +460,11 @@ function renderSettings() {
     </div>
   `;
   for (let i = 1; i <= count; i++) {
-    const teacherVal = settings[`block${i}_teacher`] || '';
+    let teacherVal = settings[`block${i}_teacher`] || '';
+    if (teacherVal && !teachers.includes(teacherVal)) {
+      teacherVal = '';
+      settings[`block${i}_teacher`] = '';
+    }
     const options = ['', ...teachers]
       .map(t => `<option value="${esc(t)}"${t === teacherVal ? ' selected' : ''}>${esc(t) || 'No Teacher'}</option>`)
       .join('');
@@ -547,6 +548,8 @@ document.getElementById('save-settings-btn').addEventListener('click', async () 
   await window.api.saveSettings(updated);
   settings = { ...settings, ...updated };
   renderBlockTabs();
+  loadTotals();
+  loadRaw();
   showToast('Settings saved.', 'success');
 });
 
@@ -571,8 +574,8 @@ async function init() {
     window.api.getTeachers(),
   ]);
   setCurrentWeekDates();
-  renderBlockTabs();
   renderSettings();
+  renderBlockTabs();
   loadTotals();
   loadRaw();
 }
