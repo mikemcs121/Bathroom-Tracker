@@ -432,7 +432,7 @@ ipcMain.handle('get-student-totals', (_e, { dateFrom, dateTo, blockRanges, nearL
     whereClauses.push(`(${blockSQL})`);
   }
 
-  whereClauses.push(`NOT (LOWER(TRIM(out_location2)) LIKE '%request nurse%')`);
+  whereClauses.push(`NOT (LOWER(TRIM(COALESCE(out_location2, ''))) LIKE '%request nurse%')`);
 
   const where = whereClauses.join(' AND ');
   const rows = queryAll(`
