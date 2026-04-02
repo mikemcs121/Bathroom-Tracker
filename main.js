@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 const https = require('https');
+const { spawn } = require('child_process');
 const initSqlJs = require('sql.js');
 
 let db;
@@ -221,7 +222,7 @@ async function checkForUpdates() {
     const latestTag = release.tag_name || '';
     if (!isNewer(latestTag, app.getVersion())) return;
 
-    const { response } = await dialog.showMessageBox(win, {
+    const { response: updateResponse } = await dialog.showMessageBox(win, {
       type: 'info',
       title: 'Update Available',
       message: `A new version (${latestTag}) is available.\nYou are on v${app.getVersion()}.\n\nDownload now?`,
@@ -229,7 +230,17 @@ async function checkForUpdates() {
       defaultId: 0,
       cancelId: 1,
     });
-    if (response !== 0) return;
+    if (updateResponse !== 0) return;
+
+    const { response: warnResponse } = await dialog.showMessageBox(win, {
+      type: 'warning',
+      title: 'Data Warning',
+      message: `Upgrading to ${latestTag} will delete the current version of the app.\n\nAny unsaved data or current session data will be lost.\n\nAre you sure you want to continue?`,
+      buttons: ['Continue', 'Cancel'],
+      defaultId: 1,
+      cancelId: 1,
+    });
+    if (warnResponse !== 0) return;
 
     const portableAsset = (release.assets || []).find(a =>
       /portable/i.test(a.name) && /\.exe$/i.test(a.name)
@@ -244,7 +255,8 @@ async function checkForUpdates() {
       return;
     }
 
-    const currentDir = path.dirname(process.env.PORTABLE_EXECUTABLE_FILE);
+    const oldExePath = process.env.PORTABLE_EXECUTABLE_FILE;
+    const currentDir = path.dirname(oldExePath);
     const suggestedName = `Bathroom Tracker ${latestTag}.exe`;
 
     const { canceled, filePath: savePath } = await dialog.showSaveDialog(win, {
@@ -275,8 +287,15 @@ async function checkForUpdates() {
     await dialog.showMessageBox(win, {
       type: 'info',
       title: 'Download Complete',
-      message: `Update saved to:\n${savePath}\n\nClose this app and run the new file to update.`,
+      message: `Update downloaded.\n\nThe app will now close and the old version will be deleted.\nRun the new file to continue:\n${savePath}`,
     });
+
+    // Launch a detached batch script to delete the old exe after the app exits
+    const batPath = path.join(app.getPath('temp'), 'bt-cleanup.bat');
+    fs.writeFileSync(batPath, `@echo off\r\n:loop\r\ntimeout /t 1 /nobreak >nul\r\ndel /f /q "${oldExePath}" 2>nul\r\nif exist "${oldExePath}" goto loop\r\ndel /f /q "%~f0"\r\n`);
+    spawn('cmd.exe', ['/c', batPath], { detached: true, stdio: 'ignore' }).unref();
+
+    app.quit();
   } catch (_) {
     // Network unavailable or any other error — silently ignore
   }
