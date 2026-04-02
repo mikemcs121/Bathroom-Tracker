@@ -105,7 +105,10 @@ async function initDB() {
     locateFile: file => path.join(__dirname, 'node_modules/sql.js/dist', file),
   });
 
-  dbPath = path.join(app.getPath('userData'), 'bathroom-tracker.db');
+  const portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
+  dbPath = portableDir
+    ? path.join(portableDir, 'bathroom-tracker.db')
+    : path.join(app.getPath('userData'), 'bathroom-tracker.db');
 
   if (fs.existsSync(dbPath)) {
     db = new SQL.Database(fs.readFileSync(dbPath));
@@ -233,11 +236,11 @@ async function checkForUpdates() {
     if (updateResponse !== 0) return;
 
     const { response: warnResponse } = await dialog.showMessageBox(win, {
-      type: 'warning',
-      title: 'Data Warning',
-      message: `Upgrading to ${latestTag} will delete the current version of the app.\n\nAny unsaved data or current session data will be lost.\n\nAre you sure you want to continue?`,
+      type: 'info',
+      title: 'Before You Update',
+      message: `The app will close after downloading ${latestTag}.\n\nYour data is stored in the same folder as this app and will not be affected.\n\nContinue?`,
       buttons: ['Continue', 'Cancel'],
-      defaultId: 1,
+      defaultId: 0,
       cancelId: 1,
     });
     if (warnResponse !== 0) return;
