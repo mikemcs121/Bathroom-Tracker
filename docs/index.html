@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bathroom Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      max-width: 560px;
+      width: 100%;
+      padding: 3rem 2.5rem;
+      text-align: center;
+    }
+
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #1a202c;
+    }
+
+    .tagline {
+      color: #4a5568;
+      font-size: 1.05rem;
+      margin-bottom: 2rem;
+    }
+
+    .download-btn {
+      display: inline-block;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 0.85rem 2.2rem;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.2s;
+      margin-bottom: 0.75rem;
+    }
+    .download-btn:hover { background: #2563eb; }
+
+    .sub {
+      color: #718096;
+      font-size: 0.875rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .features {
+      text-align: left;
+      list-style: none;
+      margin-bottom: 2rem;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 2rem;
+    }
+
+    .features li {
+      padding: 0.45rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      color: #2d3748;
+      font-size: 0.95rem;
+    }
+
+    .features li::before {
+      content: '✓';
+      color: #38a169;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .footer {
+      color: #a0aec0;
+      font-size: 0.8rem;
+      margin-top: 1.5rem;
+    }
+    .footer a { color: #a0aec0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🚻</div>
+    <h1>Bathroom Tracker</h1>
+    <p class="tagline">Track student bathroom pass usage from Securly Pass — right on your desktop.</p>
+
+    <a class="download-btn" href="https://github.com/mikemcs121/Bathroom-Tracker/releases/latest/download/Bathroom.Tracker.1.0.7.portable.exe">
+      ⬇ Download for Windows
+    </a>
+    <p class="sub">No installation required &nbsp;·&nbsp; Windows 10+ &nbsp;·&nbsp; Auto-updates</p>
+
+    <ul class="features">
+      <li>Import CSV exports directly from Securly Pass</li>
+      <li>See total bathroom time per student, color-coded by limit</li>
+      <li>Filter by date range, class block, and teacher</li>
+      <li>Configurable Near Limit and Over Limit thresholds</li>
+      <li>Automatically checks for and downloads updates</li>
+      <li>Your data is stored locally — nothing leaves your machine</li>
+    </ul>
+
+    <p class="footer">
+      <a href="https://github.com/mikemcs121/Bathroom-Tracker/releases">View all releases</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/mikemcs121/Bathroom-Tracker">GitHub</a>
+    </p>
+  </div>
+</body>
+</html>
