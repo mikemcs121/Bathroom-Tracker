@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs   = require('fs');
-const https = require('https');
 const initSqlJs = require('sql.js');
 
 let db;
@@ -177,112 +176,9 @@ function createWindow() {
   win.loadFile('renderer/index.html');
 }
 
-// ── Auto-update (portable only) ───────────────────────────────────────────────
-
-async function checkForUpdates() {
-  if (!process.env.PORTABLE_EXECUTABLE_FILE) return;
-
-  function isNewer(latest, current) {
-    const a = latest.replace(/^v/, '').split('.').map(Number);
-    const b = current.split('.').map(Number);
-    for (let i = 0; i < 3; i++) {
-      if ((a[i] || 0) > (b[i] || 0)) return true;
-      if ((a[i] || 0) < (b[i] || 0)) return false;
-    }
-    return false;
-  }
-
-  function httpsGet(url, redirectsLeft = 5) {
-    return new Promise((resolve, reject) => {
-      const req = https.get(url, {
-        headers: { 'User-Agent': 'Bathroom-Tracker-Updater' },
-      }, res => {
-        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirectsLeft > 0) {
-          resolve(httpsGet(res.headers.location, redirectsLeft - 1));
-          return;
-        }
-        let data = '';
-        res.on('data', chunk => { data += chunk; });
-        res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
-      });
-      req.setTimeout(5000, () => req.destroy());
-      req.on('error', reject);
-    });
-  }
-
-  try {
-    const { statusCode, body } = await httpsGet('https://api.github.com/repos/mikemcs121/Bathroom-Tracker/releases/latest');
-    if (statusCode !== 200) return;
-
-    const release = JSON.parse(body);
-    const latestTag = release.tag_name || '';
-    if (!isNewer(latestTag, app.getVersion())) return;
-
-    const { response } = await dialog.showMessageBox(win, {
-      type: 'info',
-      title: 'Update Available',
-      message: `A new version (${latestTag}) is available.\nYou are on v${app.getVersion()}.\n\nDownload now?`,
-      buttons: ['Download', 'Skip'],
-      defaultId: 0,
-      cancelId: 1,
-    });
-    if (response !== 0) return;
-
-    const portableAsset = (release.assets || []).find(a =>
-      /portable/i.test(a.name) && /\.exe$/i.test(a.name)
-    );
-
-    if (!portableAsset) {
-      await dialog.showMessageBox(win, {
-        type: 'info',
-        title: 'Download Update',
-        message: `No portable asset found in the release.\nVisit the GitHub releases page to download manually:\nhttps://github.com/mikemcs121/Bathroom-Tracker/releases`,
-      });
-      return;
-    }
-
-    const currentDir = path.dirname(process.env.PORTABLE_EXECUTABLE_FILE);
-    const suggestedName = `Bathroom Tracker ${latestTag}.exe`;
-
-    const { canceled, filePath: savePath } = await dialog.showSaveDialog(win, {
-      title: 'Save Update',
-      defaultPath: path.join(currentDir, suggestedName),
-      filters: [{ name: 'Executable', extensions: ['exe'] }],
-    });
-    if (canceled || !savePath) return;
-
-    await new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(savePath);
-      function download(url, redirectsLeft = 5) {
-        https.get(url, { headers: { 'User-Agent': 'Bathroom-Tracker-Updater' } }, res => {
-          if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirectsLeft > 0) {
-            download(res.headers.location, redirectsLeft - 1);
-            return;
-          }
-          res.pipe(file);
-          file.on('finish', () => file.close(resolve));
-        }).on('error', err => {
-          fs.unlink(savePath, () => {});
-          reject(err);
-        });
-      }
-      download(portableAsset.browser_download_url);
-    });
-
-    await dialog.showMessageBox(win, {
-      type: 'info',
-      title: 'Download Complete',
-      message: `Update saved to:\n${savePath}\n\nClose this app and run the new file to update.`,
-    });
-  } catch (_) {
-    // Network unavailable or any other error — silently ignore
-  }
-}
-
 app.whenReady().then(async () => {
   await initDB();
   createWindow();
-  checkForUpdates();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
