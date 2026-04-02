@@ -105,10 +105,7 @@ async function initDB() {
     locateFile: file => path.join(__dirname, 'node_modules/sql.js/dist', file),
   });
 
-  const portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
-  dbPath = portableDir
-    ? path.join(portableDir, 'bathroom-tracker.db')
-    : path.join(app.getPath('userData'), 'bathroom-tracker.db');
+  dbPath = path.join(app.getPath('userData'), 'bathroom-tracker.db');
 
   if (fs.existsSync(dbPath)) {
     db = new SQL.Database(fs.readFileSync(dbPath));
