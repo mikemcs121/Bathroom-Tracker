@@ -9,6 +9,7 @@ let db;
 let dbPath;
 let win;
 let testDataActive = false;
+let testDataMinId = 0;
 
 // ── Utility helpers ───────────────────────────────────────────────────────────
 
@@ -326,7 +327,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   if (testDataActive && db) {
-    db.run('DELETE FROM passes');
+    db.run('DELETE FROM passes WHERE id > ?', [testDataMinId]);
     saveDB();
   }
 });
@@ -530,18 +531,25 @@ ipcMain.handle('seed-test-data', () => {
     return (h || 0) * 60 + (m || 0);
   };
 
-  const blocks = [];
-  for (let i = 1; i <= count; i++) {
-    const teacher   = (s[`block${i}_teacher`] || '').trim();
-    const startMins = toMins(s[`block${i}_start`] || '');
-    const endMins   = toMins(s[`block${i}_end`]   || '');
-    if (teacher && endMins > startMins) blocks.push({ teacher, startMins, endMins });
-  }
-
-  if (!blocks.length) return { success: false, message: 'No blocks with a teacher and time range configured' };
-
   const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   const pad  = n => String(n).padStart(2, '0');
+
+  const blocks = [];
+  for (let i = 1; i <= count; i++) {
+    const configured = (s[`block${i}_teacher`] || '').trim();
+    const startMins  = toMins(s[`block${i}_start`] || '');
+    const endMins    = toMins(s[`block${i}_end`]   || '');
+    if (endMins > startMins) {
+      // Use configured teacher if set; All Teachers (empty) gets empty out_location
+      const teacher = (configured && configured !== '__none__') ? configured : '';
+      blocks.push({ teacher, startMins, endMins });
+    }
+  }
+
+  if (!blocks.length) return { success: false, message: 'No blocks with a time range configured' };
+
+  const preSeedMax = queryGet('SELECT MAX(id) AS maxId FROM passes');
+  testDataMinId = preSeedMax.maxId || 0;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
