@@ -1,7 +1,7 @@
 {
   "name": "bathroom-tracker",
-  "version": "1.0.14",
-  "description": "Nester Bathroom Pass Tracker",
+  "version": "1.0.15",
+  "description": "Bathroom Pass Tracker",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -9,7 +9,7 @@
     "build:portable": "electron-builder --win portable --x64"
   },
   "build": {
-    "appId": "com.nester.bathroom-tracker",
+    "appId": "com.bathroom-tracker",
     "productName": "Bathroom Tracker",
     "directories": {
       "output": "dist"

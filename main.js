@@ -9,7 +9,6 @@ let db;
 let dbPath;
 let win;
 let testDataActive = false;
-let testDataMinId = 0;
 
 // ── Utility helpers ───────────────────────────────────────────────────────────
 
@@ -152,6 +151,12 @@ async function initDB() {
     CREATE UNIQUE INDEX IF NOT EXISTS uq_pass
       ON passes (date, first_name, last_name, out_time);
   `);
+
+  // Migration: add is_test column if not present
+  const cols = queryAll(`PRAGMA table_info(passes)`).map(r => r.name);
+  if (!cols.includes('is_test')) {
+    db.run(`ALTER TABLE passes ADD COLUMN is_test INTEGER DEFAULT 0`);
+  }
 
   const defaults = [
     ['block_count','5'],
@@ -327,7 +332,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   if (testDataActive && db) {
-    db.run('DELETE FROM passes WHERE id > ?', [testDataMinId]);
+    db.run('DELETE FROM passes WHERE is_test = 1');
     saveDB();
   }
 });
@@ -354,6 +359,22 @@ ipcMain.handle('import-csv', async () => {
     properties: ['openFile'],
   });
   if (canceled || !filePaths.length) return { success: false, message: 'Cancelled' };
+
+  // Warn and clear test data before importing real data
+  const testCount = queryGet('SELECT COUNT(*) AS cnt FROM passes WHERE is_test = 1');
+  if (testCount.cnt > 0) {
+    const { response } = await dialog.showMessageBox(win, {
+      type: 'warning',
+      title: 'Test Data Found',
+      message: `There are ${testCount.cnt} test data records that will be deleted before importing.\n\nContinue?`,
+      buttons: ['Continue', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (response !== 0) return { success: false, message: 'Cancelled' };
+    db.run('DELETE FROM passes WHERE is_test = 1');
+    testDataActive = false;
+  }
 
   try {
     const content = fs.readFileSync(filePaths[0], 'utf-8');
@@ -506,7 +527,7 @@ ipcMain.handle('clear-data', () => {
 });
 
 ipcMain.handle('has-data', () => {
-  const row = queryGet('SELECT COUNT(*) AS cnt FROM passes');
+  const row = queryGet('SELECT COUNT(*) AS cnt FROM passes WHERE is_test = 0 OR is_test IS NULL');
   return row.cnt > 0;
 });
 
@@ -548,9 +569,6 @@ ipcMain.handle('seed-test-data', () => {
 
   if (!blocks.length) return { success: false, message: 'No blocks with a time range configured' };
 
-  const preSeedMax = queryGet('SELECT MAX(id) AS maxId FROM passes');
-  testDataMinId = preSeedMax.maxId || 0;
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -576,8 +594,8 @@ ipcMain.handle('seed-test-data', () => {
       db.run(`
         INSERT OR IGNORE INTO passes (
           date, total_duration, total_seconds, first_name, last_name,
-          out_location, out_time, out_minutes, in_time
-        ) VALUES (?,?,?,?,?,?,?,?,?)
+          out_location, out_time, out_minutes, in_time, is_test
+        ) VALUES (?,?,?,?,?,?,?,?,?,1)
       `, [date, dur, durMins * 60, fn, ln, block.teacher, outTime, outMins, inTime]);
     }
     db.run('COMMIT');
