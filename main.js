@@ -245,7 +245,7 @@ async function checkForUpdates() {
     const { response: warnResponse } = await dialog.showMessageBox(win, {
       type: 'info',
       title: 'Before You Update',
-      message: `The app will close after downloading ${latestTag}.\n\nYour data is stored in the same folder as this app and will not be affected.\n\nContinue?`,
+      message: `The app will close after downloading ${latestTag}, the old version will be deleted, and the new version will launch automatically.\n\nYour data will not be affected.\n\nContinue?`,
       buttons: ['Continue', 'Cancel'],
       defaultId: 0,
       cancelId: 1,
@@ -297,12 +297,12 @@ async function checkForUpdates() {
     await dialog.showMessageBox(win, {
       type: 'info',
       title: 'Download Complete',
-      message: `Update downloaded.\n\nThe app will now close and the old version will be deleted.\nRun the new file to continue:\n${savePath}`,
+      message: `Update downloaded.\n\nThe app will now close, the old version will be deleted, and the new version will launch automatically.`,
     });
 
-    // Launch a detached batch script to delete the old exe after the app exits
+    // Launch a detached batch script to delete the old exe and start the new one
     const batPath = path.join(app.getPath('temp'), 'bt-cleanup.bat');
-    fs.writeFileSync(batPath, `@echo off\r\n:loop\r\ntimeout /t 1 /nobreak >nul\r\ndel /f /q "${oldExePath}" 2>nul\r\nif exist "${oldExePath}" goto loop\r\ndel /f /q "%~f0"\r\n`);
+    fs.writeFileSync(batPath, `@echo off\r\n:loop\r\ntimeout /t 1 /nobreak >nul\r\ndel /f /q "${oldExePath}" 2>nul\r\nif exist "${oldExePath}" goto loop\r\nstart "" "${savePath}"\r\ndel /f /q "%~f0"\r\n`);
     spawn('cmd.exe', ['/c', batPath], { detached: true, stdio: 'ignore' }).unref();
 
     app.quit();
