@@ -175,6 +175,9 @@ function createWindow() {
     title: 'Bathroom Tracker',
   });
   win.loadFile('renderer/index.html');
+  win.webContents.on('did-finish-load', () => {
+    win.setTitle(`Bathroom Tracker v${app.getVersion()}`);
+  });
 }
 
 // ── Auto-update (portable only) ───────────────────────────────────────────────
