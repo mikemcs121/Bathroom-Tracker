@@ -107,6 +107,15 @@ async function initDB() {
 
   dbPath = path.join(app.getPath('userData'), 'bathroom-tracker.db');
 
+  // One-time migration from v1.0.5: db was stored next to the exe
+  if (!fs.existsSync(dbPath) && process.env.PORTABLE_EXECUTABLE_DIR) {
+    const legacyPath = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'bathroom-tracker.db');
+    if (fs.existsSync(legacyPath)) {
+      fs.copyFileSync(legacyPath, dbPath);
+      fs.unlinkSync(legacyPath);
+    }
+  }
+
   if (fs.existsSync(dbPath)) {
     db = new SQL.Database(fs.readFileSync(dbPath));
   } else {
