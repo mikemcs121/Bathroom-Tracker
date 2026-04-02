@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <title>Bathroom Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>Bathroom Tracker</h1>
+    <nav class="tabs">
+      <button class="tab active" data-tab="totals">Student Totals</button>
+      <button class="tab" data-tab="detail">Pass Detail</button>
+      <button class="tab" data-tab="raw">Raw Data</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ── Student Totals ─────────────────────────────────────── -->
+    <section id="tab-totals" class="tab-content active">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>From <input type="date" id="totals-from" /></label>
+          <label>To   <input type="date" id="totals-to"   /></label>
+        </div>
+        <button class="btn btn-primary" id="refresh-totals">Refresh</button>
+      </div>
+      <div class="block-tabs" id="totals-block-tabs"></div>
+      <div class="stats-row" id="totals-stats"></div>
+      <div class="table-wrap" id="totals-table"></div>
+    </section>
+
+    <!-- ── Pass Detail ────────────────────────────────────────── -->
+    <section id="tab-detail" class="tab-content">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>From <input type="date" id="detail-from" /></label>
+          <label>To   <input type="date" id="detail-to"   /></label>
+        </div>
+        <div class="filter-group">
+          <label>Student <input type="text" id="detail-search" placeholder="name search…" /></label>
+        </div>
+        <button class="btn btn-primary" id="refresh-detail">Refresh</button>
+      </div>
+      <div class="block-tabs" id="detail-block-tabs"></div>
+      <div class="stats-row" id="detail-stats"></div>
+      <div class="table-wrap" id="detail-table"></div>
+    </section>
+
+    <!-- ── Raw Data ───────────────────────────────────────────── -->
+    <section id="tab-raw" class="tab-content">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <button class="btn btn-primary" id="import-btn">&#8679; Import CSV from Securly Pass</button>
+          <button class="btn btn-danger"  id="clear-btn">&#10005; Clear All Data</button>
+        </div>
+        <div class="filter-group">
+          <label>From <input type="date" id="raw-from" /></label>
+          <label>To   <input type="date" id="raw-to"   /></label>
+        </div>
+        <button class="btn" id="refresh-raw">Refresh</button>
+      </div>
+      <div class="stats-row" id="raw-stats"></div>
+      <div class="table-wrap" id="raw-table"></div>
+    </section>
+
+    <!-- ── Settings ──────────────────────────────────────────── -->
+    <section id="tab-settings" class="tab-content">
+      <div class="settings-scroll">
+        <div class="settings-form">
+
+          <h2>Block Schedule</h2>
+          <div class="block-grid" id="block-settings-grid"></div>
+
+          <h2>Pass Time Limits</h2>
+          <div class="limit-grid">
+            <label>
+              Near Limit (minutes)
+              <input type="number" id="near-limit" min="1" max="30" />
+            </label>
+            <label>
+              Over Limit (minutes)
+              <input type="number" id="over-limit" min="1" max="60" />
+            </label>
+          </div>
+          <p class="settings-hint">
+            Status: <span class="badge badge-green">OK</span> = under near limit &nbsp;
+            <span class="badge badge-amber">Near Limit</span> = at or above near limit &nbsp;
+            <span class="badge badge-red">Over Limit</span> = at or above over limit
+          </p>
+
+          <div class="settings-footer">
+            <button class="btn btn-primary" id="save-settings-btn">Save Settings</button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Student Detail Modal ──────────────────────────────── -->
+  <div id="student-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="student-modal-title"></h2>
+        <button class="modal-close" id="student-modal-close">&#10005;</button>
+      </div>
+      <div class="modal-body" id="student-modal-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
