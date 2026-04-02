@@ -557,13 +557,10 @@ ipcMain.handle('seed-test-data', () => {
 
   const blocks = [];
   for (let i = 1; i <= count; i++) {
-    const configured = (s[`block${i}_teacher`] || '').trim();
-    const startMins  = toMins(s[`block${i}_start`] || '');
-    const endMins    = toMins(s[`block${i}_end`]   || '');
+    const startMins = toMins(s[`block${i}_start`] || '');
+    const endMins   = toMins(s[`block${i}_end`]   || '');
     if (endMins > startMins) {
-      // Use configured teacher if set; All Teachers (empty) gets empty out_location
-      const teacher = (configured && configured !== '__none__') ? configured : '';
-      blocks.push({ teacher, startMins, endMins });
+      blocks.push({ teacher: `${fakeName()} ${fakeName()}`, startMins, endMins });
     }
   }
 
