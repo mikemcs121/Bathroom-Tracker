@@ -504,8 +504,15 @@ ipcMain.handle('has-data', () => {
 });
 
 ipcMain.handle('seed-test-data', () => {
-  const firstNames = ['Emma','Liam','Olivia','Noah','Ava','Ethan','Sophia','Mason','Isabella','Logan','Mia','Lucas','Charlotte','Aiden','Harper'];
-  const lastNames  = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Wilson','Anderson','Taylor','Thomas'];
+  const cons = 'BCDFGHJKLMNPRSTVWXZ';
+  const vow  = 'AEIOU';
+  const randChar = s => s[rand(0, s.length - 1)];
+  const fakeName = () => {
+    const len = rand(3, 6);
+    let n = randChar(cons);
+    for (let i = 1; i < len; i++) n += randChar(i % 2 === 0 ? cons : vow).toLowerCase();
+    return n;
+  };
 
   const settingsRows = queryAll('SELECT key, value FROM settings');
   const s = Object.fromEntries(settingsRows.map(r => [r.key, r.value]));
@@ -549,8 +556,8 @@ ipcMain.handle('seed-test-data', () => {
       const inTime  = `${pad(Math.floor(inMins  / 60))}:${pad(inMins  % 60)}`;
       const dur     = `0:${pad(durMins)}:00`;
 
-      const fn = firstNames[rand(0, firstNames.length - 1)];
-      const ln = lastNames [rand(0, lastNames.length  - 1)];
+      const fn = fakeName();
+      const ln = fakeName();
 
       db.run(`
         INSERT OR IGNORE INTO passes (
