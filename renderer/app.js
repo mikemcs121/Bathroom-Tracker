@@ -239,6 +239,11 @@ async function openStudentModal(firstName, lastName) {
       </thead>
       <tbody>
   `;
+  const totalSecs  = rows.reduce((a, r) => a + (r.total_seconds || 0), 0);
+  const nearSecs   = (Number(settings.near_limit_min) || 10) * 60;
+  const overSecs   = (Number(settings.over_limit_min) || 15) * 60;
+  const totalBadge = totalSecs >= overSecs ? 'badge-red' : totalSecs >= nearSecs ? 'badge-amber' : 'badge-green';
+
   for (const r of rows) {
     html += `
       <tr>
@@ -250,7 +255,16 @@ async function openStudentModal(firstName, lastName) {
       </tr>
     `;
   }
-  html += '</tbody></table>';
+  html += `
+    </tbody>
+    <tfoot>
+      <tr>
+        <td><strong>Total (${rows.length} pass${rows.length !== 1 ? 'es' : ''})</strong></td>
+        <td class="num"><span class="badge ${totalBadge}">${secsToDisplay(totalSecs)}</span></td>
+        <td colspan="3"></td>
+      </tr>
+    </tfoot>
+  </table>`;
   bodyEl.innerHTML = html;
 }
 
