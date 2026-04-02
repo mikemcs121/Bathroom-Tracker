@@ -1,6 +1,6 @@
 {
   "name": "bathroom-tracker",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Nester Bathroom Pass Tracker",
   "main": "main.js",
   "scripts": {

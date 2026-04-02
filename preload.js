@@ -10,4 +10,6 @@ contextBridge.exposeInMainWorld('api', {
   clearData:        ()       => ipcRenderer.invoke('clear-data'),
   getStats:         ()       => ipcRenderer.invoke('get-stats'),
   getTeachers:      ()       => ipcRenderer.invoke('get-teachers'),
+  hasData:          ()       => ipcRenderer.invoke('has-data'),
+  seedTestData:     ()       => ipcRenderer.invoke('seed-test-data'),
 });

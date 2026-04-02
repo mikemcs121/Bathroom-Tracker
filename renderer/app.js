@@ -578,6 +578,25 @@ async function init() {
   renderBlockTabs();
   loadTotals();
   loadRaw();
+
+  const seedBtn = document.getElementById('seed-test-data-btn');
+  const hasData = await window.api.hasData();
+  if (!hasData) seedBtn.style.display = '';
+
+  seedBtn.addEventListener('click', async () => {
+    const result = await window.api.seedTestData();
+    if (!result.success) {
+      showToast(result.message, 'error');
+      return;
+    }
+    seedBtn.style.display = 'none';
+    teachers = await window.api.getTeachers();
+    renderSettings();
+    renderBlockTabs();
+    loadTotals();
+    loadRaw();
+    showToast('Test data loaded — will be removed when the app closes.', 'info');
+  });
 }
 
 init();

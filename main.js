@@ -8,6 +8,7 @@ const initSqlJs = require('sql.js');
 let db;
 let dbPath;
 let win;
+let testDataActive = false;
 
 // ── Utility helpers ───────────────────────────────────────────────────────────
 
@@ -323,6 +324,13 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
+app.on('before-quit', () => {
+  if (testDataActive && db) {
+    db.run('DELETE FROM passes');
+    saveDB();
+  }
+});
+
 // ── IPC Handlers ──────────────────────────────────────────────────────────────
 
 ipcMain.handle('get-settings', () => {
@@ -488,6 +496,77 @@ ipcMain.handle('clear-data', () => {
   db.run('DELETE FROM passes');
   saveDB();
   return true;
+});
+
+ipcMain.handle('has-data', () => {
+  const row = queryGet('SELECT COUNT(*) AS cnt FROM passes');
+  return row.cnt > 0;
+});
+
+ipcMain.handle('seed-test-data', () => {
+  const firstNames = ['Emma','Liam','Olivia','Noah','Ava','Ethan','Sophia','Mason','Isabella','Logan','Mia','Lucas','Charlotte','Aiden','Harper'];
+  const lastNames  = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Wilson','Anderson','Taylor','Thomas'];
+
+  const settingsRows = queryAll('SELECT key, value FROM settings');
+  const s = Object.fromEntries(settingsRows.map(r => [r.key, r.value]));
+  const count = Number(s.block_count) || 5;
+
+  const toMins = hhmm => {
+    if (!hhmm) return 0;
+    const [h, m] = hhmm.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+
+  const blocks = [];
+  for (let i = 1; i <= count; i++) {
+    const teacher   = (s[`block${i}_teacher`] || '').trim();
+    const startMins = toMins(s[`block${i}_start`] || '');
+    const endMins   = toMins(s[`block${i}_end`]   || '');
+    if (teacher && endMins > startMins) blocks.push({ teacher, startMins, endMins });
+  }
+
+  if (!blocks.length) return { success: false, message: 'No blocks with a teacher and time range configured' };
+
+  const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pad  = n => String(n).padStart(2, '0');
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  db.run('BEGIN');
+  try {
+    for (let n = 0; n < 100; n++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - rand(0, 6));
+      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+      const block   = blocks[rand(0, blocks.length - 1)];
+      const outMins = rand(block.startMins, block.endMins);
+      const durMins = rand(2, 12);
+      const inMins  = outMins + durMins;
+
+      const outTime = `${pad(Math.floor(outMins / 60))}:${pad(outMins % 60)}`;
+      const inTime  = `${pad(Math.floor(inMins  / 60))}:${pad(inMins  % 60)}`;
+      const dur     = `0:${pad(durMins)}:00`;
+
+      const fn = firstNames[rand(0, firstNames.length - 1)];
+      const ln = lastNames [rand(0, lastNames.length  - 1)];
+
+      db.run(`
+        INSERT OR IGNORE INTO passes (
+          date, total_duration, total_seconds, first_name, last_name,
+          out_location, out_time, out_minutes, in_time
+        ) VALUES (?,?,?,?,?,?,?,?,?)
+      `, [date, dur, durMins * 60, fn, ln, block.teacher, outTime, outMins, inTime]);
+    }
+    db.run('COMMIT');
+  } catch (e) {
+    db.run('ROLLBACK');
+    return { success: false, message: e.message };
+  }
+
+  testDataActive = true;
+  return { success: true };
 });
 
 ipcMain.handle('get-teachers', () => {
