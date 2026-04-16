@@ -318,7 +318,7 @@ table.small th, table.small td { padding: 5px 10px; }
 }
 
 .settings-form {
-  max-width: 960px;
+  max-width: 1100px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -343,7 +343,7 @@ table.small th, table.small td { padding: 5px 10px; }
 
 .block-row {
   display: grid;
-  grid-template-columns: 70px minmax(100px, 1fr) 160px 160px minmax(160px, 2fr) 32px;
+  grid-template-columns: 70px minmax(100px, 1fr) 160px 160px minmax(130px, 1.5fr) minmax(130px, 1.5fr) 32px;
   gap: 10px;
   align-items: center;
 }

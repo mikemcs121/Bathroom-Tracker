@@ -31,12 +31,13 @@ function getActiveBlock(tabsId) {
   return active ? Number(active.dataset.block) : 1;
 }
 
-// Returns [{start, end, teacher}] for the given block number
+// Returns [{start, end, teacher, teacher2}] for the given block number
 function getBlockRange(blockNum) {
   return [{
-    start:   hhmToMins(settings[`block${blockNum}_start`]   || '00:00'),
-    end:     hhmToMins(settings[`block${blockNum}_end`]     || '23:59'),
-    teacher: settings[`block${blockNum}_teacher`] || '',
+    start:    hhmToMins(settings[`block${blockNum}_start`]    || '00:00'),
+    end:      hhmToMins(settings[`block${blockNum}_end`]      || '23:59'),
+    teacher:  settings[`block${blockNum}_teacher`]  || '',
+    teacher2: settings[`block${blockNum}_teacher2`] || '',
   }];
 }
 
@@ -109,13 +110,17 @@ function renderBlockTabs() {
 
     let html = '';
     for (let i = 1; i <= count; i++) {
-      const name  = settings[`block${i}_name`]  || `Block ${i}`;
-      const start = settings[`block${i}_start`] || '';
-      const end   = settings[`block${i}_end`]   || '';
-      const teacher = settings[`block${i}_teacher`] || '';
-      const teacherLabel = teacher === '__none__' ? 'Planning Period' : teacher;
+      const name     = settings[`block${i}_name`]     || `Block ${i}`;
+      const start    = settings[`block${i}_start`]    || '';
+      const end      = settings[`block${i}_end`]      || '';
+      const teacher  = settings[`block${i}_teacher`]  || '';
+      const teacher2 = settings[`block${i}_teacher2`] || '';
+      const t1Label = teacher === '__none__' ? 'Planning Period' : teacher;
+      const teacherPart = t1Label && teacher2 ? ` · ${esc(t1Label)} / ${esc(teacher2)}`
+                        : t1Label              ? ` · ${esc(t1Label)}`
+                        : '';
       const label = start && end
-        ? `${esc(name)} (${formatTimeDisplay(start)}–${formatTimeDisplay(end)}${teacherLabel ? ' · ' + esc(teacherLabel) : ''})`
+        ? `${esc(name)} (${formatTimeDisplay(start)}–${formatTimeDisplay(end)}${teacherPart})`
         : esc(name);
       html += `<button class="block-tab${i === setActive ? ' active' : ''}" data-block="${i}"><span data-block-label="${i}">${label}</span></button>`;
     }
@@ -444,14 +449,16 @@ document.getElementById('refresh-raw').addEventListener('click', loadRaw);
 function readFormIntoSettings() {
   const count = Number(settings.block_count) || 5;
   for (let i = 1; i <= count; i++) {
-    const nameEl    = document.getElementById(`block${i}-name`);
-    const startEl   = document.getElementById(`block${i}-start`);
-    const endEl     = document.getElementById(`block${i}-end`);
-    const teacherEl = document.getElementById(`block${i}-teacher`);
-    if (nameEl)    settings[`block${i}_name`]    = nameEl.value.trim() || `Block ${i}`;
-    if (startEl)   settings[`block${i}_start`]   = startEl.value;
-    if (endEl)     settings[`block${i}_end`]     = endEl.value;
-    if (teacherEl) settings[`block${i}_teacher`] = teacherEl.value;
+    const nameEl     = document.getElementById(`block${i}-name`);
+    const startEl    = document.getElementById(`block${i}-start`);
+    const endEl      = document.getElementById(`block${i}-end`);
+    const teacherEl  = document.getElementById(`block${i}-teacher`);
+    const teacher2El = document.getElementById(`block${i}-teacher2`);
+    if (nameEl)     settings[`block${i}_name`]     = nameEl.value.trim() || `Block ${i}`;
+    if (startEl)    settings[`block${i}_start`]    = startEl.value;
+    if (endEl)      settings[`block${i}_end`]      = endEl.value;
+    if (teacherEl)  settings[`block${i}_teacher`]  = teacherEl.value;
+    if (teacher2El) settings[`block${i}_teacher2`] = teacher2El.value;
   }
 }
 
@@ -464,7 +471,8 @@ function renderSettings() {
       <span>Name</span>
       <span>Start</span>
       <span>End</span>
-      <span>Teacher</span>
+      <span>Teacher 1</span>
+      <span>Teacher 2</span>
       <span></span>
     </div>
   `;
@@ -474,10 +482,19 @@ function renderSettings() {
       teacherVal = '';
       settings[`block${i}_teacher`] = '';
     }
+    let teacher2Val = settings[`block${i}_teacher2`] || '';
+    if (teacher2Val && !teachers.includes(teacher2Val)) {
+      teacher2Val = '';
+      settings[`block${i}_teacher2`] = '';
+    }
     const options = [
       `<option value=""${teacherVal === '' ? ' selected' : ''}>All Teachers</option>`,
       `<option value="__none__"${teacherVal === '__none__' ? ' selected' : ''}>Planning Period</option>`,
       ...teachers.map(t => `<option value="${esc(t)}"${t === teacherVal ? ' selected' : ''}>${esc(t)}</option>`),
+    ].join('');
+    const options2 = [
+      `<option value=""${teacher2Val === '' ? ' selected' : ''}>None</option>`,
+      ...teachers.map(t => `<option value="${esc(t)}"${t === teacher2Val ? ' selected' : ''}>${esc(t)}</option>`),
     ].join('');
     html += `
       <div class="block-row" data-block-row="${i}">
@@ -486,6 +503,7 @@ function renderSettings() {
         <input type="time" id="block${i}-start" value="${esc(settings[`block${i}_start`] || '')}" />
         <input type="time" id="block${i}-end"   value="${esc(settings[`block${i}_end`]   || '')}" />
         <select id="block${i}-teacher">${options}</select>
+        <select id="block${i}-teacher2">${options2}</select>
         ${count > 1
           ? `<button class="btn btn-danger btn-sm remove-block-btn" data-remove="${i}" title="Remove block">✕</button>`
           : '<span></span>'}
@@ -513,10 +531,11 @@ function addBlock() {
   const count = Number(settings.block_count) || 5;
   const newNum = count + 1;
   settings.block_count = String(newNum);
-  settings[`block${newNum}_name`]    = `Block ${newNum}`;
-  settings[`block${newNum}_start`]   = '';
-  settings[`block${newNum}_end`]     = '';
-  settings[`block${newNum}_teacher`] = '';
+  settings[`block${newNum}_name`]     = `Block ${newNum}`;
+  settings[`block${newNum}_start`]    = '';
+  settings[`block${newNum}_end`]      = '';
+  settings[`block${newNum}_teacher`]  = '';
+  settings[`block${newNum}_teacher2`] = '';
   renderSettings();
   renderBlockTabs();
 }
@@ -527,15 +546,17 @@ function removeBlock(n) {
   if (count <= 1) return;
   // Shift blocks n+1..count down by 1
   for (let i = n; i < count; i++) {
-    settings[`block${i}_name`]    = settings[`block${i + 1}_name`]    || `Block ${i}`;
-    settings[`block${i}_start`]   = settings[`block${i + 1}_start`]   || '';
-    settings[`block${i}_end`]     = settings[`block${i + 1}_end`]     || '';
-    settings[`block${i}_teacher`] = settings[`block${i + 1}_teacher`] || '';
+    settings[`block${i}_name`]     = settings[`block${i + 1}_name`]     || `Block ${i}`;
+    settings[`block${i}_start`]    = settings[`block${i + 1}_start`]    || '';
+    settings[`block${i}_end`]      = settings[`block${i + 1}_end`]      || '';
+    settings[`block${i}_teacher`]  = settings[`block${i + 1}_teacher`]  || '';
+    settings[`block${i}_teacher2`] = settings[`block${i + 1}_teacher2`] || '';
   }
   delete settings[`block${count}_name`];
   delete settings[`block${count}_start`];
   delete settings[`block${count}_end`];
   delete settings[`block${count}_teacher`];
+  delete settings[`block${count}_teacher2`];
   settings.block_count = String(count - 1);
   renderSettings();
   renderBlockTabs();
@@ -550,10 +571,11 @@ document.getElementById('save-settings-btn').addEventListener('click', async () 
     over_limit_min: document.getElementById('over-limit').value,
   };
   for (let i = 1; i <= count; i++) {
-    updated[`block${i}_name`]    = settings[`block${i}_name`]    || `Block ${i}`;
-    updated[`block${i}_start`]   = settings[`block${i}_start`]   || '';
-    updated[`block${i}_end`]     = settings[`block${i}_end`]     || '';
-    updated[`block${i}_teacher`] = settings[`block${i}_teacher`] || '';
+    updated[`block${i}_name`]     = settings[`block${i}_name`]     || `Block ${i}`;
+    updated[`block${i}_start`]    = settings[`block${i}_start`]    || '';
+    updated[`block${i}_end`]      = settings[`block${i}_end`]      || '';
+    updated[`block${i}_teacher`]  = settings[`block${i}_teacher`]  || '';
+    updated[`block${i}_teacher2`] = settings[`block${i}_teacher2`] || '';
   }
 
   await window.api.saveSettings(updated);

@@ -446,6 +446,10 @@ ipcMain.handle('get-student-totals', (_e, { dateFrom, dateTo, blockRanges, nearL
       }
       if (r.teacher) {
         params[`:bt${i}`] = r.teacher.toLowerCase().trim();
+        if (r.teacher2) {
+          params[`:bt2${i}`] = r.teacher2.toLowerCase().trim();
+          return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND (LOWER(TRIM(out_location)) = :bt${i} OR LOWER(TRIM(out_location)) = :bt2${i}))`;
+        }
         return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND LOWER(TRIM(out_location)) = :bt${i})`;
       }
       return `(out_minutes >= :bs${i} AND out_minutes <= :be${i})`;
@@ -502,6 +506,10 @@ ipcMain.handle('get-pass-detail', (_e, { dateFrom, dateTo, blockRanges, search, 
       }
       if (r.teacher) {
         params[`:bt${i}`] = r.teacher.toLowerCase().trim();
+        if (r.teacher2) {
+          params[`:bt2${i}`] = r.teacher2.toLowerCase().trim();
+          return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND (LOWER(TRIM(out_location)) = :bt${i} OR LOWER(TRIM(out_location)) = :bt2${i}))`;
+        }
         return `(out_minutes >= :bs${i} AND out_minutes <= :be${i} AND LOWER(TRIM(out_location)) = :bt${i})`;
       }
       return `(out_minutes >= :bs${i} AND out_minutes <= :be${i})`;
