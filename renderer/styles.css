@@ -442,6 +442,29 @@ table.small th, table.small td { padding: 5px 10px; }
 
 .settings-footer { padding-top: 4px; }
 
+.keyword-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.keyword-row .keyword-input {
+  flex: 1;
+  max-width: 320px;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 13px;
+  background: #f8fafc;
+}
+
+.keyword-row .keyword-input:focus {
+  border-color: #3b82f6;
+  background: white;
+  outline: none;
+}
+
 .btn-sm {
   padding: 3px 7px;
   font-size: 12px;

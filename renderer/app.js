@@ -447,6 +447,13 @@ document.getElementById('refresh-raw').addEventListener('click', loadRaw);
 
 // Read current form values back into settings (call before add/remove/save)
 function readFormIntoSettings() {
+  // Capture excluded keywords from inputs
+  const kwInputs = document.querySelectorAll('#excluded-keywords-list .keyword-input');
+  if (kwInputs.length > 0) {
+    const kws = Array.from(kwInputs).map(el => el.value.trim()).filter(v => v !== '');
+    settings.excluded_keywords = JSON.stringify(kws);
+  }
+
   const count = Number(settings.block_count) || 5;
   for (let i = 1; i <= count; i++) {
     const nameEl     = document.getElementById(`block${i}-name`);
@@ -562,6 +569,43 @@ function removeBlock(n) {
   renderBlockTabs();
 }
 
+function renderExcludedKeywords() {
+  let keywords;
+  try {
+    keywords = settings.excluded_keywords ? JSON.parse(settings.excluded_keywords) : ['request nurse', 'counselor'];
+  } catch (e) {
+    keywords = ['request nurse', 'counselor'];
+  }
+  const container = document.getElementById('excluded-keywords-list');
+  container.innerHTML = keywords.map((kw, i) => `
+    <div class="keyword-row">
+      <input type="text" class="keyword-input" value="${esc(kw)}" data-index="${i}">
+      <button class="btn btn-danger btn-sm remove-keyword-btn" data-index="${i}" title="Remove">✕</button>
+    </div>
+  `).join('');
+  container.querySelectorAll('.remove-keyword-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.index);
+      let kws;
+      try { kws = JSON.parse(settings.excluded_keywords); } catch (e) { kws = []; }
+      kws.splice(idx, 1);
+      settings.excluded_keywords = JSON.stringify(kws);
+      renderExcludedKeywords();
+    });
+  });
+}
+
+document.getElementById('add-keyword-btn').addEventListener('click', () => {
+  let kws;
+  try { kws = settings.excluded_keywords ? JSON.parse(settings.excluded_keywords) : []; } catch (e) { kws = []; }
+  kws.push('');
+  settings.excluded_keywords = JSON.stringify(kws);
+  renderExcludedKeywords();
+  // Focus the new input
+  const inputs = document.querySelectorAll('#excluded-keywords-list .keyword-input');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+});
+
 document.getElementById('save-settings-btn').addEventListener('click', async () => {
   readFormIntoSettings();
   const count = Number(settings.block_count) || 5;
@@ -577,6 +621,8 @@ document.getElementById('save-settings-btn').addEventListener('click', async () 
     updated[`block${i}_teacher`]  = settings[`block${i}_teacher`]  || '';
     updated[`block${i}_teacher2`] = settings[`block${i}_teacher2`] || '';
   }
+
+  updated.excluded_keywords = settings.excluded_keywords || JSON.stringify(['request nurse', 'counselor']);
 
   await window.api.saveSettings(updated);
   settings = { ...settings, ...updated };
@@ -608,6 +654,7 @@ async function init() {
   ]);
   setCurrentWeekDates();
   renderSettings();
+  renderExcludedKeywords();
   renderBlockTabs();
   loadTotals();
   loadRaw();

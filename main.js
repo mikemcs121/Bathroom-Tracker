@@ -168,6 +168,7 @@ async function initDB() {
     ['near_limit_min','10'],
     ['over_limit_min','15'],
     ['default_blocks','3,4'],
+    ['excluded_keywords', JSON.stringify(['request nurse', 'counselor'])],
   ];
   defaults.forEach(([k, v]) => {
     db.run('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [k, v]);
@@ -457,7 +458,12 @@ ipcMain.handle('get-student-totals', (_e, { dateFrom, dateTo, blockRanges, nearL
     whereClauses.push(`(${blockSQL})`);
   }
 
-  whereClauses.push(`NOT (LOWER(TRIM(COALESCE(out_location2, ''))) LIKE '%request nurse%')`);
+  const kwRow = queryAll(`SELECT value FROM settings WHERE key = 'excluded_keywords'`)[0];
+  const excludedKeywords = kwRow ? JSON.parse(kwRow.value) : ['request nurse', 'counselor'];
+  for (const kw of excludedKeywords) {
+    const safe = kw.toLowerCase().replace(/'/g, "''");
+    whereClauses.push(`NOT (LOWER(TRIM(COALESCE(out_location2, ''))) LIKE '%${safe}%')`);
+  }
 
   const where = whereClauses.join(' AND ');
   const rows = queryAll(`

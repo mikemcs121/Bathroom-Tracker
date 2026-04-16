@@ -1,6 +1,6 @@
 {
   "name": "bathroom-tracker",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "Bathroom Pass Tracker",
   "main": "main.js",
   "scripts": {
